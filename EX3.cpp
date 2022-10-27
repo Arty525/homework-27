@@ -1,18 +1,13 @@
 ﻿#include <iostream>
 #include <string>
+#include <vector>
 
 class Staff {
 public:
-
 	std::string name;
-
 };
 
-class Worker : public Staff{
-	int id;
-
-public:
-
+class Worker : public Staff {
 	int state = 0;
 	enum status {
 		A = 'A',
@@ -21,194 +16,166 @@ public:
 		FREE = 'FREE'
 	};
 
+public:
+
 	void set_status(int job) {
 		state = job;
 		state |= status(job);
-	}
-
-	Worker(int inId, int inJob) : Staff() {
-		std::cout << "Enter worker's name: ";
-		std::cin >> this->name;
-		id = inId;
-		state |= status(inJob);
-
 		if (state < 3) {
-			std::cout << name << " got a job:" << state << std::endl;
+			std::cout << this->name << " got a job:" << status(state) << std::endl;
 		}
 		else {
-			std::cout << name << " is free" << std::endl;
+			std::cout << this->name << " is free" << std::endl;
 		}
+	}
+
+	int get_status() {
+		return state;
+	}
+
+	Worker(int inJob) : Staff() {
+		std::cout << "Enter worker's name: ";
+		std::cin >> this->name;
+		set_status(inJob);
 	}
 };
 
-class Manager : public Staff {
-	int id;
-	int taskCount;
-	int workers;
-	int freeWorkers;
-	int job;
-	Worker** worker = nullptr;
+class Team {
+	int workers = 0;
+	int freeWorkers = 0;
+	int tasks = 0;
+	std::vector<Worker> staff;
 
 public:
 
-	Worker* get_worker(int j) {
-		return worker[j];
-	}
-
-	int get_id() {
-		return id;
-	}
-
-	int get_taskCount() {
-		return taskCount;
-	}
-
-	void set_taskCount(int n) {
-		taskCount = n;
-	}
-
-	void set_job() {
-		if (taskCount > 0) {
-			job = rand() % 2;
-		}
-		else job = 3;
-	}
-
-	int get_job() {
-		return job;
-	}
-	
-	void set_freeWorkers(int w) {
-		freeWorkers = w;
+	int get_workers() {
+		return workers;
 	}
 
 	int get_freeWorkers() {
 		return freeWorkers;
 	}
 
-	Manager(std::string inName, int inX, int inId, int inWorkers) : Staff () {
-		name = inName;
-		id = inId;
-		std::srand(inX + id);
-		workers = inWorkers;
+	int get_tasks() {
+		return tasks;
+	}
+
+	Worker get_worker(int index) {
+		return staff[index];
+	}
+
+	int newJob() {
+		int job = 0;
+		if (tasks > 0) {
+			job = rand() % 2;
+			--tasks;
+			--freeWorkers;
+		}
+		else job = 3;
+		return job;
+	}
+
+	void set_job(int inJob, int inId) {
+		std::srand(inJob + inId);
+		tasks = freeWorkers - rand() % freeWorkers;
+		for (int i = 0; i < staff.size() && tasks > 0 && freeWorkers > 0; ++i) {
+			std::cout << "Free: " << freeWorkers << std::endl;
+			std::cout << "Tasks: " << tasks << std::endl;
+			if (staff[i].get_status() != 3) {
+				staff[i].set_status(newJob());
+			}
+		}
+	}
+
+	Team(int inJob, int inId) {
+		std::cout << "Enter number of workers: ";
+		std::cin >> workers;
+
 		freeWorkers = workers;
-		taskCount = workers - rand() % workers - 1;
 
-		if (taskCount == 0) taskCount = 1;
+		std::cout << "Free: " << freeWorkers << std::endl;
 
-		std::cout << "Tasks: " << taskCount << std::endl;
-		worker = new Worker * [workers];
+		if (freeWorkers > 0) {
+			std::srand(inJob + inId);
+			tasks = freeWorkers - rand() % freeWorkers;
+			std::cout << "Tasks: " << tasks << std::endl;
+		}
+		else {
+			std::cout << "Free workers is empty" << std::endl;
+		}
 
 		for (int i = 0; i < workers; ++i) {
-			if (taskCount > 0) {
-				job = rand() % 2;
-			}
-			else job = 3;
-			worker[i] = new Worker(i + 1, job);
-			if (worker[i]->state < 3) {
-				--freeWorkers;
-				--taskCount;
-			}
-			std::cout << "Free workers: " << freeWorkers << std::endl;
-			std::cout << "Tasks amount: " << taskCount << std::endl;
+			staff.push_back(Worker(newJob()));
+			std::cout << "Free: " << freeWorkers << std::endl;
+			std::cout << "Tasks: " << tasks << std::endl;
 		}
 	}
 };
 
-class Team {
-	int workers;
-	int id;
-	Manager* manager;
+class Manager : public Staff {
+	int id = 0;
+	Team* team;
 
 public:
-
-	Manager* get_manager() {
-		return manager;
-	}
-	int get_workers() {
-		return workers;
-	}
 	int get_id() {
 		return id;
 	}
 
-	Team(int inX, int inId) {
-		std::string name;
+	Team* get_team() {
+		return team;
+	}
+
+	Manager(int inJob, int inId) : Staff() {
 		id = inId;
-		std::cout << "Team " << inId << std::endl;
-		std::cout << "Enter name of manager: ";
-		std::cin >> name;
-		std::cout << "Enter number of workers: ";
-		std::cin >> workers;
-		manager = new Manager(name, inX, inId, workers);
+		std::cout << "Manager Team #" << id << std::endl;
+		std::cout << "Enter manager's name: ";
+		std::cin >> this->name;
+		team = new Team(inJob, inId);
 	}
 };
 
-class Director : public Staff {
-	
-	Team** team = nullptr;
+class Director : public Staff{
+	int x = 0;
+	Manager** manager = nullptr;
 
 public:
 
-	Team* get_team(int i) {
-		return team[i];
+	Manager* get_manager(int index) {
+		return manager[index];
 	}
 
-	int x;
-
-	Director(int inTeams) : Staff () {
-		std::cout << "Enter seed number: ";
-		std::cin >> x;
-		std::cout << "Enter director's name: ";
-		std::cin >> this->name;
-		team = new Team * [inTeams];
+	Director(int inTeams, int inX, std::string name) : Staff() {
+		x = inX;		
+		manager = new Manager * [inTeams];
 		for (int i = 0; i < inTeams; ++i) {
-			team[i] = new Team(x, i+1);
+			manager[i] = new Manager(x, i + 1);
 		}
 	}
 };
 
 int main() {
+	std::string name;
 	int teams = 0;
-	std::string command;
-
+	int x = 0;
 	std::cout << "Enter number of teams: ";
 	std::cin >> teams;
-
-	Director director(teams);
-
-	do {
-		std::cout << "Enter command: ";
-		std::getline(std::cin, command);
-		if (command == "new task") {
-			std::cout << "Enter seed number: ";
-			std::cin >> director.x;
-			for (int i = 0; i < teams; ++i) {
-				if (director.get_team(i)->get_manager()->get_freeWorkers() == 0) {
-					std::cout << "Team " << director.get_team(i)->get_id() << ": free workers is empty." << std::endl;
-				}
-				else {
-					int n = 0;
-					std::srand(director.get_team(i)->get_manager()->get_id() + director.x);
-					n = director.get_team(i)->get_manager()->get_freeWorkers() - rand() % director.get_team(i)->get_manager()->get_freeWorkers() - 1;
-					if (n == 0) n = 1;
-					std::cout << "Free: " << director.get_team(i)->get_manager()->get_freeWorkers() << std::endl;
-					std::cout << "Tasks: " << n << std::endl;
-					director.get_team(i)->get_manager()->set_taskCount(n);
-					for (int j = 0; j < director.get_team(i)->get_workers(); ++j) {
-						if (director.get_team(i)->get_manager()->get_worker(j)->state == 3) {
-							director.get_team(i)->get_manager()->set_job();
-							director.get_team(i)->get_manager()->get_worker(j)->set_status(director.get_team(i)->get_manager()->get_job());
-							std::cout << director.get_team(i)->get_manager()->get_worker(j)->name << " got a job: " << director.get_team(i)->get_manager()->get_worker(j)->state << std::endl;
-							if (director.get_team(i)->get_manager()->get_worker(j)->state < 3) {
-								director.get_team(i)->get_manager()->set_freeWorkers(director.get_team(i)->get_manager()->get_freeWorkers() - 1);
-								director.get_team(i)->get_manager()->set_taskCount(director.get_team(i)->get_manager()->get_taskCount() - 1);
-							}
-						}
-					}
-				}
-			}
+	std::cout << "Enter seed number: ";
+	std::cin >> x;
+	std::cout << "Enter director's name: ";
+	std::cin >> name;
+	Director director = Director(teams, x, name);
+	bool free = true;
+	for (int i = 0; i < teams && free; ++i) {
+		free = false;
+		std::cout << "Team #" << i + 1<< std::endl;
+		if (director.get_manager(i)->get_team()->get_freeWorkers() > 0) {
+			free = true;
+			int id = director.get_manager(i)->get_id();
+			director.get_manager(i)->get_team()->set_job(x, id);
 		}
-	} while (command != "stop");
+		else {
+			std::cout << "Free workers is empty." << std::endl;
+		}
+	}
 	return 0;
 }
